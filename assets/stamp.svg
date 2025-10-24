@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#g)" stroke-width="10">
+    <circle cx="128" cy="128" r="96"/>
+    <circle cx="128" cy="128" r="86" stroke-dasharray="9 8"/>
+  </g>
+  <g>
+    <text x="128" y="110" text-anchor="middle" font-family="Georgia, serif" font-size="24" fill="#2a3e74" transform="rotate(-8,128,128)">HARBOUR PASSPORT</text>
+    <text x="128" y="160" text-anchor="middle" font-family="Georgia, serif" font-size="36" fill="#1d3878" transform="rotate(-8,128,128)">SWIM</text>
+  </g>
+</svg>
