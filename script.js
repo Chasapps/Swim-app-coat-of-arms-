@@ -1,7 +1,9 @@
-// v2.3 'Pretty' with animations and polished UI
-const LS_KEYS = { VISITED:'harbour_pools_visited_v2_3', SELECTION:'harbour_pools_selected_v2_3' };
+// Harbour Pools — single-card navigator (clean rebuild)
+// LocalStorage keys
+const LS = { VISITED:'harbour_pools_visited_v3', INDEX:'harbour_pools_index_v3' };
 
-const pools = [
+// Data
+const POOLS = [
   {name:'Woolwich Baths', lat:-33.83914, lon:151.16943},
   {name:'Northbridge Baths', lat:-33.80637, lon:151.22233},
   {name:'Greenwich Baths', lat:-33.84102, lon:151.18341},
@@ -9,144 +11,120 @@ const pools = [
   {name:'Clontarf Beach Baths', lat:-33.80680, lon:151.25121},
 ];
 
-let visited = JSON.parse(localStorage.getItem(LS_KEYS.VISITED) || '{}');
-let selectedIndex = Number(localStorage.getItem(LS_KEYS.SELECTION) || 0);
+// State
+let visited = JSON.parse(localStorage.getItem(LS.VISITED) || '{}');
+let idx = Math.min(Math.max(0, Number(localStorage.getItem(LS.INDEX) || 0)), POOLS.length-1);
 
-const listView = document.getElementById('listView');
-const passportView = document.getElementById('passportView');
-const toggleBtn = document.getElementById('toggleBtn');
-const countBadge = document.getElementById('countBadge');
-const mapToggle = document.getElementById('mapToggle');
+// Elements
+const el = (id)=>document.getElementById(id);
+const listView = el('listView');
+const passportView = el('passportView');
+const poolName = el('poolName');
+const counter = el('counter');
+const visitedToggle = el('visitedToggle');
+const mapToggle = el('mapToggle');
+const passportGrid = el('passportGrid');
+const tabPools = el('tabPools');
+const tabPassport = el('tabPassport');
+const prevBtn = el('prevBtn');
+const nextBtn = el('nextBtn');
+const resetBtn = el('resetBtn');
 
-function updateCount(){
+// Map
+let map, marker;
+function initMap(){
+  map = L.map('map', { zoomControl: true, attributionControl:false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
+  marker = L.marker([0,0]).addTo(map);
+}
+
+// Render
+function renderCard(){
+  const p = POOLS[idx];
+  poolName.textContent = p.name;
+  marker.setLatLng([p.lat, p.lon]);
+  map.setView([p.lat, p.lon], 15);
+  visitedToggle.checked = !!visited[p.name];
+  updateCounter();
+  localStorage.setItem(LS.INDEX, String(idx));
+}
+function updateCounter(){
   const n = Object.values(visited).filter(Boolean).length;
-  countBadge.textContent = `${n} / ${pools.length}`;
+  counter.textContent = `${n}/${POOLS.length} swum`;
 }
-
-let onPassport = false;
-function setView(passport){
-  onPassport = passport;
-  document.body.classList.remove('full-map');
-  listView.classList.toggle('active', !passport);
-  passportView.classList.toggle('active', passport);
-  toggleBtn.textContent = passport ? 'Back to List' : 'Passport';
-  if(passport) renderPassport();
-  setTimeout(()=>map.invalidateSize(), 150);
-}
-toggleBtn.addEventListener('click', ()=> setView(!onPassport));
-
-  renderList(); renderPassport(); updateCount();
-});
-
-// Full map toggle
-mapToggle.addEventListener('click', ()=>{
-  const fm = document.body.classList.toggle('full-map');
-  mapToggle.textContent = fm ? '📋 Back to Split' : '🗺️ Full Map';
-  mapToggle.setAttribute('aria-pressed', fm ? 'true' : 'false');
-  setTimeout(()=>{ map.invalidateSize(); panToSelected(); }, 150);
-});
-
-function renderList(){
-  const list = document.getElementById('poolList');
-  list.innerHTML = '';
-  pools.forEach((p, idx) => {
-    const row = document.createElement('div');
-    row.className = 'pool-item';
-    row.innerHTML = `
-      <div>
-        <div class="pool-name">${p.name}</div>
-        
-      </div>
-      <button class="stamp-chip ${visited[p.name] ? 'stamped':''}" 
-        data-name="${p.name}">${visited[p.name] ? 'Stamped' : 'Not yet'}</button>`;
-
-    row.addEventListener('click', (e)=>{
-      const t = e.target;
-      if(t && t.classList && t.classList.contains('stamp-chip')) return;
-      selectIndex(idx);
-    });
-    row.querySelector('.stamp-chip').addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const name = e.currentTarget.getAttribute('data-name');
-      toggleStamp(name, true);
-    });
-    list.appendChild(row);
-  });
-  highlightSelected();
-  updateCount();
-}
-
-function toggleStamp(name, animate=false){
-  visited[name] = !visited[name];
-  localStorage.setItem(LS_KEYS.VISITED, JSON.stringify(visited));
-  renderList();
-  renderPassport(animate ? name : null);
-}
-
-function selectIndex(idx){
-  selectedIndex = (idx + pools.length) % pools.length;
-  localStorage.setItem(LS_KEYS.SELECTION, String(selectedIndex));
-  highlightSelected();
-  panToSelected();
-}
-
-function moveSelection(step){ selectIndex(selectedIndex + step); }
-document.getElementById('btnUp').addEventListener('click', ()=>moveSelection(-1));
-document.getElementById('btnDown').addEventListener('click', ()=>moveSelection(1));
-
-function highlightSelected(){
-  const rows = Array.from(document.querySelectorAll('#poolList .pool-item'));
-  rows.forEach((el,i)=> el.classList.toggle('row-selected', i===selectedIndex));
-}
-
-// Map using Leaflet
-const map = L.map('map').setView([pools[0].lat, pools[0].lon], 14);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
-const marker = L.marker([pools[0].lat, pools[0].lon]).addTo(map);
-
-function panToSelected(){
-  const p = pools[selectedIndex];
-  marker.setLatLng([p.lat, p.lon]).bindPopup(p.name);
-  map.setView([p.lat, p.lon], 15, {animate:true});
-}
-
-function renderPassport(popName=null){
-  const grid = document.getElementById('passportGrid');
-  grid.innerHTML = '';
-  pools.forEach(p => {
-    const stamped = !!visited[p.name];
-    const card = document.createElement('div');
-    card.className = 'passport';
-    card.innerHTML = `
-      <div class="title">${p.name}</div>
-      
-      <div class="stamp ${popName===p.name?'pop':''}" style="${stamped?'opacity:.98':'opacity:.45; filter:grayscale(1)'}">
-        <img src="assets/stamp.svg" alt="stamp">
-        <div class="label">${stamped ? p.name.split(' ')[0].toUpperCase() : 'NOT STAMPED'}</div>
-      </div>`;
-    grid.appendChild(card);
+function renderPassport(){
+  passportGrid.innerHTML = '';
+  POOLS.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'stamp';
+    div.innerHTML = `<div class="ok">${visited[p.name] ? '✅' : '⬜️'}</div><div class="name">${p.name}</div>`;
+    passportGrid.appendChild(div);
   });
 }
 
-function init(){
-  renderList();
-  selectIndex(selectedIndex);
-  setTimeout(()=> { map.invalidateSize(); panToSelected(); }, 150);
-  setView(false);
-  updateCount();
+// Actions
+function setVisited(flag){
+  visited[POOLS[idx].name] = !!flag;
+  localStorage.setItem(LS.VISITED, JSON.stringify(visited));
+  updateCounter();
+  renderPassport();
 }
-document.addEventListener('DOMContentLoaded', init);
+function next(){ idx = (idx+1) % POOLS.length; renderCard(); }
+function prev(){ idx = (idx-1+POOLS.length) % POOLS.length; renderCard(); }
 
+function showPools(){ listView.classList.remove('hidden'); passportView.classList.add('hidden'); tabPools.classList.add('active'); tabPassport.classList.remove('active'); }
+function showPassport(){ passportView.classList.remove('hidden'); listView.classList.add('hidden'); tabPassport.classList.add('active'); tabPools.classList.remove('active'); }
 
-// Exit button: return to splash (index.html) or signal parent
-document.addEventListener('DOMContentLoaded', () => {
-  const exitBtn = document.getElementById('exitBtn');
-  if (exitBtn) {
-    exitBtn.addEventListener('click', () => {
-      try { window.parent && window.parent.postMessage && window.parent.postMessage({type:'WADS_EXIT'}, '*'); } catch (e) {}
-      try { window.top && window.top.location && (window.top.location.href = 'index.html'); } catch (e) {
-        try { location.href = 'index.html'; } catch(e2) {}
-      }
-    });
+// Fullscreen map toggle
+let full = false;
+function toggleMap(){
+  full = !full;
+  const mapEl = document.getElementById('map');
+  if(full){
+    mapEl.classList.add('fullscreen');
+    mapToggle.setAttribute('aria-pressed','true');
+    mapToggle.textContent = '🗺️ Exit Full Map';
+  }else{
+    mapEl.classList.remove('fullscreen');
+    mapToggle.setAttribute('aria-pressed','false');
+    mapToggle.textContent = '🗺️ Full Map';
   }
+  setTimeout(()=>{ map.invalidateSize(); }, 210);
+}
+
+// Exit to splash or parent
+function wireExit(){
+  const exitBtn = document.getElementById('exitBtn');
+  exitBtn.addEventListener('click', () => {
+    try { window.parent && window.parent.postMessage({type:'WADS_EXIT'}, '*'); } catch(e){}
+    try { location.href = 'index.html'; } catch(e){}
+  });
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  renderPassport();
+  renderCard();
+
+  // events
+  visitedToggle.addEventListener('change', (e)=> setVisited(e.target.checked));
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+  });
+  mapToggle.addEventListener('click', toggleMap);
+  tabPools.addEventListener('click', showPools);
+  tabPassport.addEventListener('click', showPassport);
+  resetBtn.addEventListener('click', ()=>{
+    if(confirm('Clear all stamps?')){
+      visited = {};
+      localStorage.setItem(LS.VISITED, JSON.stringify(visited));
+      updateCounter(); renderPassport();
+    }
+  });
+
+  wireExit();
 });
