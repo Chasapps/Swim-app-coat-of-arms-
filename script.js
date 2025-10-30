@@ -3,12 +3,22 @@
 const LS = { VISITED:'harbour_pools_visited_v3', INDEX:'harbour_pools_index_v3' };
 
 // Data
-const POOLS = [
-  {name:'Woolwich Baths', lat:-33.83914, lon:151.16943},
-  {name:'Northbridge Baths', lat:-33.80637, lon:151.22233},
-  {name:'Greenwich Baths', lat:-33.84102, lon:151.18341},
-  {name:'Dawn Fraser Baths', lat:-33.85354, lon:151.17325},
-  {name:'Clontarf Beach Baths', lat:-33.80680, lon:151.25121},
+const pools = [
+  { name: "Parsley Bay Swimming Enclosure, Vaucluse", lat: -33.852746, lng: 151.278041, type: "enclosure" },
+  { name: "Nielsen Park – Shark Beach, Vaucluse", lat: -33.850846, lng: 151.268571, type: "netted" },
+  { name: "Watsons Bay Baths, Watsons Bay", lat: -33.844243, lng: 151.281703, type: "enclosure" },
+  { name: "Murray Rose Pool (Redleaf), Double Bay", lat: -33.872072, lng: 151.247724, type: "enclosure" },
+  { name: "Marrinawi Cove, Barangaroo", lat: -33.859000, lng: 151.199000, type: "enclosure" },
+  { name: "Maccallum Seawater Pool, Cremorne Point", lat: -33.845320, lng: 151.228080, type: "tidal pool" },
+  { name: "Balmoral Baths, Mosman", lat: -33.825413, lng: 151.251602, type: "netted" },
+  { name: "Clifton Gardens (Chowder Bay) netted enclosure, Mosman", lat: -33.842110, lng: 151.247550, type: "netted" },
+  { name: "Northbridge Baths, Sailors Bay", lat: -33.806626, lng: 151.221141, type: "tidal baths" },
+  { name: "Greenwich Baths, Greenwich", lat: -33.841520, lng: 151.182880, type: "netted" },
+  { name: "Little Manly Cove tidal/netted pool, Manly", lat: -33.806764, lng: 151.286668, type: "netted" },
+  { name: "Forty Baskets Beach netted enclosure, Balgowlah", lat: -33.802309, lng: 151.269516, type: "netted" },
+  { name: "Woolwich Baths (Lane Cove River)", lat: -33.840300, lng: 151.170200, type: "tidal baths" },
+  { name: "Chiswick Baths (Parramatta River)", lat: -33.850000, lng: 151.140000, type: "netted" },
+  { name: "Dawn Fraser Baths, Balmain", lat: -33.856095, lng: 151.170644, type: "tidal baths" }
 ];
 
 // State
