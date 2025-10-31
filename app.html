@@ -1,63 +1,130 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Harbour Pools</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Harbour Pools — Passport</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<style>
+  html, body { height:100%; margin:0; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  body { display:flex; flex-direction:column; align-items:center; background:#f4f9ff; }
+  h2 { margin:8px 0; color:#0c2b3a; }
+  #map { height:300px; width:90%; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.15); margin-bottom:16px; transition:all .3s ease; }
+  #map.fullscreen { position:fixed; top:0; left:0; right:0; bottom:0; height:100%; width:100%; z-index:900; border-radius:0; }
+  .controls { display:flex; gap:10px; margin-bottom:10px; }
+  .hidden { display:none; }
+  .active { font-weight:bold; }
+  .exit-btn {
+    position:absolute;
+    top:12px; left:12px;
+    z-index:1000;
+    background:linear-gradient(135deg,#4ea7ff,#00d4ff);
+    color:white;
+    border:none;
+    border-radius:999px;
+    padding:10px 18px;
+    font-size:15px;
+    font-weight:600;
+    box-shadow:0 3px 8px rgba(0,150,255,0.3);
+    cursor:pointer;
+    transition:all 0.2s ease;
+    backdrop-filter:blur(6px);
+  }
+  .exit-btn:hover { transform:scale(1.05); }
+  .exit-btn:active { transform:scale(0.95); }
+  .jolly-btn {
+    background:linear-gradient(135deg,#ff8c00,#ffcd4a);
+    color:white;
+    border:none;
+    border-radius:999px;
+    padding:10px 18px;
+    font-size:15px;
+    font-weight:600;
+    box-shadow:0 3px 8px rgba(255,150,0,0.3);
+    cursor:pointer;
+    transition:all 0.2s ease;
+    backdrop-filter:blur(6px);
+  }
+  .jolly-btn:hover { transform:scale(1.05); }
+  .jolly-btn:active { transform:scale(0.95); }
+  .stamp { border:1px solid #ccc; border-radius:10px; padding:8px; margin:6px; text-align:center; font-size:13px; }
+</style>
 </head>
 <body>
-  <header class="glass">
-    <div class="titlebar">
-      <div class="brand">
-        <span class="logo">🏊‍♂️</span>
-        <div>
-          <h1>Harbour Pools</h1>
-          <div class="subtitle">WADS Summer Quest</div>
-        </div>
-      </div>
-      <nav class="tabs">
-        <button id="tabPools" class="tab active">Pools</button>
-        <button id="tabPassport" class="tab">Passport</button>
-        <button id="exitBtn" class="pill">Exit</button>
-      </nav>
-    </div>
-  </header>
-
-  <main>
-    <section id="listView" class="view">
-      <div class="card-view">
-        <button id="prevBtn" aria-label="Previous" class="nav-arrow">‹</button>
-        <div class="pool-card">
-          <div class="pool-name" id="poolName"></div>
-          <div id="map" class="map"></div>
-          <div class="controls">
-            <label class="toggle">
-              <input type="checkbox" id="visitedToggle">
-              <span class="toggle-pill"></span>
-              Mark as swum
-            </label>
-            <button id="mapToggle" class="pill" aria-pressed="false">🗺️ Full Map</button>
-          </div>
-        </div>
-        <button id="nextBtn" aria-label="Next" class="nav-arrow">›</button>
-      </div>
-      <div class="counter-line">
-        <span id="counter"></span>
-        <button id="resetBtn" class="link">Reset stamps</button>
-      </div>
-    </section>
-
-    <section id="passportView" class="view hidden">
-      <h2 class="subtitle">Summer Quest Passport</h2>
-      <div id="passportGrid" class="passport-grid"></div>
-      <p class="hint">Your stamps are saved to this device.</p>
-    </section>
-  </main>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+  <h2 id="poolName">Harbour Pools</h2>
+  <div style="position:relative; width:90%; max-width:600px;">
+    <button id="exitBtn" class="exit-btn">⏎ Exit Map</button>
+    <div id="map"></div>
+  </div>
+  <div class="controls">
+    <button id="prevBtn" class="jolly-btn">⏪ Prev</button>
+    <button id="nextBtn" class="jolly-btn">Next ⏩</button>
+    <button id="mapToggle" class="jolly-btn">🗺️ Full Map</button>
+  </div>
+  <div id="counter"></div>
+<script>
+const LS = { VISITED:'harbour_pools_visited_v3', INDEX:'harbour_pools_index_v3' };
+const pools = [
+  { name: "Parsley Bay Swimming Enclosure, Vaucluse", lat: -33.852746, lng: 151.278041 },
+  { name: "Nielsen Park – Shark Beach, Vaucluse", lat: -33.850846, lng: 151.268571 },
+  { name: "Watsons Bay Baths, Watsons Bay", lat: -33.844243, lng: 151.281703 },
+  { name: "Murray Rose Pool (Redleaf), Double Bay", lat: -33.872072, lng: 151.247724 },
+  { name: "Marrinawi Cove, Barangaroo", lat: -33.859000, lng: 151.199000 },
+  { name: "Maccallum Seawater Pool, Cremorne Point", lat: -33.845320, lng: 151.228080 },
+  { name: "Balmoral Baths, Mosman", lat: -33.825413, lng: 151.251602 },
+  { name: "Clifton Gardens, Mosman", lat: -33.842110, lng: 151.247550 },
+  { name: "Northbridge Baths, Sailors Bay", lat: -33.806626, lng: 151.221141 },
+  { name: "Greenwich Baths, Greenwich", lat: -33.841520, lng: 151.182880 },
+  { name: "Little Manly Cove, Manly", lat: -33.806764, lng: 151.286668 },
+  { name: "Forty Baskets Beach, Balgowlah", lat: -33.802309, lng: 151.269516 },
+  { name: "Woolwich Baths", lat: -33.840300, lng: 151.170200 },
+  { name: "Chiswick Baths", lat: -33.850000, lng: 151.140000 },
+  { name: "Dawn Fraser Baths, Balmain", lat: -33.856095, lng: 151.170644 }
+];
+let visited = JSON.parse(localStorage.getItem(LS.VISITED) || "{}");
+let idx = Number(localStorage.getItem(LS.INDEX) || 0);
+let map, marker;
+function initMap(){
+  map = L.map('map',{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  marker = L.marker([0,0]).addTo(map);
+}
+function renderCard(){
+  const p = pools[idx];
+  document.getElementById('poolName').textContent = p.name;
+  marker.setLatLng([p.lat,p.lng]);
+  map.setView([p.lat,p.lng],15);
+  localStorage.setItem(LS.INDEX,idx);
+  document.getElementById('counter').textContent = `${idx+1}/${pools.length}`;
+}
+function next(){ idx=(idx+1)%pools.length; renderCard(); }
+function prev(){ idx=(idx-1+pools.length)%pools.length; renderCard(); }
+let full=false;
+function toggleMap(){
+  full=!full;
+  const mapEl=document.getElementById('map');
+  const btn=document.getElementById('mapToggle');
+  if(full){ mapEl.classList.add('fullscreen'); btn.textContent='🗺️ Exit Full Map'; }
+  else { mapEl.classList.remove('fullscreen'); btn.textContent='🗺️ Full Map'; }
+  setTimeout(()=>map.invalidateSize(),210);
+}
+function wireExit(){
+  const exitBtn=document.getElementById('exitBtn');
+  if(!exitBtn)return;
+  exitBtn.addEventListener('click',()=>{
+    try{ window.parent&&window.parent.postMessage({type:'WADS_EXIT'},'*'); }catch(e){}
+    try{ location.href='index.html'; }catch(e){}
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  renderCard();
+  document.getElementById('nextBtn').addEventListener('click',next);
+  document.getElementById('prevBtn').addEventListener('click',prev);
+  document.getElementById('mapToggle').addEventListener('click',toggleMap);
+  wireExit();
+});
+</script>
 </body>
 </html>

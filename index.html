@@ -8,21 +8,47 @@
 <style>
   :root{ --orange:#f06a1f; --blue:#0f5f99; --yellow:#f4c027; --ink:#0c2b3a; }
   html,body{height:100%;margin:0}
-  body{font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;background:var(--orange);color:#042436;}
-  .splash{display:grid;place-items:center;height:100%;padding:24px;box-sizing:border-box}
-  .card{background:#fff3; border:2px solid #0002; backdrop-filter: blur(10px);
-        border-radius:20px; padding:28px; max-width:520px; text-align:center; color:#032;
-        box-shadow: 0 20px 40px #0003;}
-  h1{margin:0 0 10px;font-size: clamp(28px, 5vw, 40px); color:#041f2b}
-  p{margin:6px 0 16px; line-height:1.3}
-  .btn{background:#fff; border:0; padding:14px 18px; border-radius:999px; font-weight:700; cursor:pointer}
-  .exit{ position:fixed; right:14px; top:14px; display:none; }
-  .fade{ opacity:0; transform: translateY(8px); transition:.35s ease-in-out }
-  .fade.show{ opacity:1; transform:none }
+  body{
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--orange);
+    color: #042436;
+  }
+  .splash{
+    display:grid;place-items:center;height:100%;
+    padding:24px;box-sizing:border-box;
+  }
+  .card{
+    background:#fff3; border:2px solid #0002;
+    backdrop-filter: blur(10px);
+    border-radius:20px; padding:28px;
+    max-width:520px; text-align:center; color:#032;
+    box-shadow:0 20px 40px #0003;
+  }
+  h1{margin:0 0 10px;font-size:clamp(28px,5vw,40px);color:#041f2b}
+  p{margin:6px 0 16px;line-height:1.3}
+  .btn{
+    background:white;
+    border:0;
+    padding:14px 18px;
+    border-radius:999px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 3px 8px rgba(0,0,0,0.2);
+  }
+  .btn:hover{transform:scale(1.05)}
+  .exit{
+    position:fixed; right:14px; top:14px;
+    display:none;
+    background:linear-gradient(135deg,#4ea7ff,#00d4ff);
+    color:white;
+    box-shadow:0 3px 8px rgba(0,150,255,0.3);
+  }
+  .fade{opacity:0;transform:translateY(8px);transition:.35s ease-in-out}
+  .fade.show{opacity:1;transform:none}
 </style>
 </head>
 <body>
-  <button id="exitBtn" class="btn exit">Exit</button>
+  <button id="exitBtn" class="btn exit">⏎ Exit</button>
   <div id="splash" class="splash">
     <div class="card fade">
       <h1>WADS Summer Quest</h1>
@@ -48,6 +74,7 @@ function openApp(){
     exitBtn.style.display='block';
   },200);
 }
+
 function exitToSplash(){
   if(iframe){iframe.remove();iframe=null;}
   splash.style.display='grid';
@@ -55,12 +82,14 @@ function exitToSplash(){
   exitBtn.style.display='none';
   setTimeout(()=>splash.querySelector('.card').classList.add('show'),50);
 }
+
 openBtn.addEventListener('click', openApp);
 exitBtn.addEventListener('click', exitToSplash);
+
 window.addEventListener('message', (e)=>{
   if(e && e.data && e.data.type==='WADS_EXIT'){ exitToSplash(); }
 });
-// entry animation
+
 setTimeout(()=>splash.querySelector('.card').classList.add('show'),30);
 </script>
 </body>
