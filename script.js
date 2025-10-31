@@ -21,19 +21,9 @@ const pools = [
   { name: "Dawn Fraser Baths, Balmain", lat: -33.856095, lng: 151.170644, type: "tidal baths" }
 ];
 
-// ---------- Helpers ----------
-function clampIndex(n) {
-  let i = Number(n);
-  if (!Number.isFinite(i)) i = 0;
-  i = i | 0; // floor & coerce to int
-  if (i < 0) i = 0;
-  if (i > pools.length - 1) i = pools.length - 1;
-  return i;
-}
-
 // State
-let visited = JSON.parse(localStorage.getItem(LS.VISITED) || "{}");
-let idx = clampIndex(localStorage.getItem(LS.INDEX));
+let visited = JSON.parse(localStorage.getItem(LS.VISITED) || '{}');
+let idx = Math.min(Math.max(0, Number(localStorage.getItem(LS.INDEX) || 0)), POOLS.length-1);
 
 // Elements
 const el = (id)=>document.getElementById(id);
@@ -60,21 +50,21 @@ function initMap(){
 
 // Render
 function renderCard(){
-  const p = pools[idx];
+  const p = POOLS[idx];
   poolName.textContent = p.name;
-  marker.setLatLng([p.lat, p.lng]); // FIX: use lng, not lon
-  map.setView([p.lat, p.lng], 15);
+  marker.setLatLng([p.lat, p.lon]);
+  map.setView([p.lat, p.lon], 15);
   visitedToggle.checked = !!visited[p.name];
   updateCounter();
   localStorage.setItem(LS.INDEX, String(idx));
 }
 function updateCounter(){
   const n = Object.values(visited).filter(Boolean).length;
-  counter.textContent = `${n}/${pools.length} swum`;
+  counter.textContent = `${n}/${POOLS.length} swum`;
 }
 function renderPassport(){
   passportGrid.innerHTML = '';
-  pools.forEach(p=>{
+  POOLS.forEach(p=>{
     const div = document.createElement('div');
     div.className = 'stamp';
     div.innerHTML = `<div class="ok">${visited[p.name] ? '✅' : '⬜️'}</div><div class="name">${p.name}</div>`;
@@ -84,13 +74,13 @@ function renderPassport(){
 
 // Actions
 function setVisited(flag){
-  visited[pools[idx].name] = !!flag;
+  visited[POOLS[idx].name] = !!flag;
   localStorage.setItem(LS.VISITED, JSON.stringify(visited));
   updateCounter();
   renderPassport();
 }
-function next(){ idx = (idx+1) % pools.length; renderCard(); }
-function prev(){ idx = (idx-1+pools.length) % pools.length; renderCard(); }
+function next(){ idx = (idx+1) % POOLS.length; renderCard(); }
+function prev(){ idx = (idx-1+POOLS.length) % POOLS.length; renderCard(); }
 
 function showPools(){ listView.classList.remove('hidden'); passportView.classList.add('hidden'); tabPools.classList.add('active'); tabPassport.classList.remove('active'); }
 function showPassport(){ passportView.classList.remove('hidden'); listView.classList.add('hidden'); tabPassport.classList.add('active'); tabPools.classList.remove('active'); }
@@ -115,7 +105,6 @@ function toggleMap(){
 // Exit to splash or parent
 function wireExit(){
   const exitBtn = document.getElementById('exitBtn');
-  if (!exitBtn) return;
   exitBtn.addEventListener('click', () => {
     try { window.parent && window.parent.postMessage({type:'WADS_EXIT'}, '*'); } catch(e){}
     try { location.href = 'index.html'; } catch(e){}
